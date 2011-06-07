@@ -10,7 +10,7 @@ Components
 Python software:
   generate_genome_files.py
     Converts "synin" input to directory of gene lists, one per chromosome.
-  DCJ_C.py
+  DCJ_ds.py
     Runs the genome evolution simulation, producing "synin" format on standard output.
 Test files:
    example.synin
@@ -45,10 +45,10 @@ chromosomes, while any two marked genes on the same chromosome must
 stay together on the same chromosome.
 
 Details of the DCJ-C framework, along with related work and
-references, are described in "A simple model of gene dosage constraint
-accounts for long-term conservation of macro-synteny in metazoan
-genomes," by Jie Lv, Paul Havlak, and Nicholas Putnam, Department of
-Ecology and Evolutionary Biology, Rice University (in submission).
+references, are described in "A neutral model explains long-term
+conservation of macro-synteny in metazoan genomes" by Jie Lv, Paul
+Havlak, and Nicholas Putnam, Department of Ecology and Evolutionary
+Biology, Rice University (in submission).
 
 This is a demonstration program, capable of replicating the
 experiments in the paper but not fully featured for general use.
@@ -84,7 +84,7 @@ identifiers for each chromosome identifier in column from the original synin fil
 2) Run the desired number of simulated DCJ-C moves on the chromosomes represented
 by those genelists (that is, on the first genome of input synin file):
 
-	python DCJ_C.py 2500 7 example.genelists > simulated.synin
+	python DCJ_ds.py 2500 7 example.genelists > simulated.synin
 
 Where the arguments are:
 
