@@ -1,49 +1,139 @@
-DCJ_dosage_sensitive simulating program
-=================
-=================
+DCJ-C Software
+==============
+Copyright 2011
 
-Jie Lv (Collaborating with Paul Havlak and Nik Putnam)
-Rice University
-Putnam Lab
-jie.lv@rice.edu
+by Jie Lv <Jie.Lv@rice.edu>, Paul Havlak <havlak@rice.edu> and 
+Nik Putnam <nputnam@rice.edu>
 
+Components
+==========
+Python software:
+  generate_genome_files.py
+    Converts "synin" input to directory of gene lists, one per chromosome.
+  DCJ_C.py
+    Runs the genome evolution simulation, producing "synin" format on standard output.
+Test files:
+   example.synin
+     Example of gene clusters shared between two genomes with 3557 genes.
+   simulated.synin
+     One possible result of simulated genome evolution starting with
+     the chromosomal structure of the first genome in from
+     example.synin. Each run should produce the same number of lines
+     and words, with identical values for columns 1-4 (if you sort on
+     column 1, 3, or 4), but different values in columns 5 and 6
+     depending on random choice of genome moves.  As example.synin
+     gives original_1 vs. original_2, simulated.synin gives original_1
+     vs. a new simulated genome derived from it by chromosomal
+     rearrangements.
 
-RUNNING
-============
+(More about input and output below)
 
-Step 1 - generate input genome
-------------------------
-generate_genome_files.py 
+Tested using Python 2.6.6
+Python 2.6.6 (r266:84292, Jan  3 2011, 17:24:34) 
+[GCC 4.2.1 (Apple Inc. build 5664)] on darwin
 
-DESCRIPTION:  
-  read starting genome from the first two columns of the synin file, and store the whole genome into a new   directory. Each chromosome is formatted as a string and stored into a separated file under this directory.
+Purpose
+=======
 
-INPUT: 
-  sysnin file from STDIN    
+Demonstrates Double-Cut & Join operations with Context (DCJ-C) as a
+model of genome evolution, for the example "dosage sensitive" model:
+marked genes are not allowed to move between chromosomes.
 
-OUTPUT:  
-  formatted chromosomes stored in separated files in a directory
+While sequences of DCJ moves can split or join chromosomes, any two
+marked genes on different chromosomes must always stay on separate
+chromosomes, while any two marked genes on the same chromosome must
+stay together on the same chromosome.
 
-EXECUTING EXAMPLE:
+Details of the DCJ-C framework, along with related work and
+references, are described in "A simple model of gene dosage constraint
+accounts for long-term conservation of macro-synteny in metazoan
+genomes," by Jie Lv, Paul Havlak, and Nicholas Putnam, Department of
+Ecology and Evolutionary Biology, Rice University (in submission).
 
-  cat "your_synin_file" | python generate_genome_files.py "path_to_your_target_directory"
+This is a demonstration program, capable of replicating the
+experiments in the paper but not fully featured for general use.
+Feel free to use and extend for your own experiments.
 
+Usage
+=====
 
-Step 2 - Perform simulation
--------------------------
-DCJ_ds.py
+The scripts should be executed by explicitly invoking the python
+interpreter. Steps:
 
-DESCRIPTION:  
-  Given a stating genome, the number of rearrangement you want to perform and the percentage of dosage sensitive genes across the whole genome, it print out the simulated genome in synin file format.
+0) Create a synin file (or use the example provided) specifying the
+number of chromosomes and genes (implicitly, based on the number of
+unique identifiers for each) and the relative positions of genes on
+chromosomes. Your input need only have meaningful input in the first
+three columns. See the description of synin format below under
+"Appendix: SYNIN format".
 
-INPUT:  
-  It accept three arguments in order: 
-  number of DCJ moves you want perform n
-  percentage of dosage sensitive genes u%
-  path to the input genome directory   d 
+1) Convert input synin file to directory of gene lists, one per chromosome.
 
-OUTPUT: 
-  simulated genome formatted as sysnin file to STDOUT
+	mkdir example.genelists
+	sort -k 2,2 -k 3,3n example.synin | python generate_genome_files.py example.genelists
 
-EXECUTING EXAMPLE:
-  python DCJ_ds.py n u d
+The script reads from standard input; its single argument is a genelists directory
+(either its path relative to the current directory or an absolute path).
+
+The input is in "synin" format (see below). For this step, the 4th, 5th and 6th
+columns are ignored.
+
+Afterwards, the genelists directory contains a trivially formatted list of gene
+identifiers for each chromosome identifier in column from the original synin file.
+
+2) Run the desired number of simulated DCJ-C moves on the chromosomes represented
+by those genelists (that is, on the first genome of input synin file):
+
+	python DCJ_C.py 2500 7 example.genelists > simulated.synin
+
+Where the arguments are:
+
+argv[1] (example: 2500):	number of DCJ moves to be performed (not counting rejects)
+argv[2] (example: 7):		percentage of genes that are marked (so won't move)
+argv[3] (example: example.genelists)
+	Directory with one file per input chromosome, 
+	each a one-line whitespace-delimited list of gene ids
+
+3) Enjoy the output. Because columns 3 and 6 of the output are genome-wide ordinal numbers
+   (in the original and simulated genomes, respectively), a quick Oxford plot can be done
+   by plotting with column 3 values as x coordinates and column 6 values as y coordinates.
+   (You would then still need to draw lines to grid the plot by chromosomes.)
+
+Appendix: SYNIN format
+======================
+A simple way of specifying related genes (descendents of the same ancestral gene)
+on chromosomes of two different genomes.
+
+Columns 1-3: First genome
+	Genome of 3557 genes in test input example.synin
+	Same genome again in test output simulated.synin
+	      (because first genome from input is used as initial genome for simulation)
+
+Column 1: gene identifier
+       - on input, an arbitrary string but unique within this genome's genes
+       - in output, a gene id from input with added prefix of "g1.")
+Column 2: chromosome identifier
+       - on input, an arbitrary string but unique within this genome's chromosomes
+       - in output, a chromosome id from input with added prefix of "g1."
+Column 3: ordinal key for gene within chromosome
+       - on input, specifies order of genes; should be unique within chromosome
+       - in output, renumbered, still unique within chromosome but maybe in whole genome
+
+Columns 4-6: Second or modified genome
+	- on input, the second organism's genome
+	- in output, a simulated genome, based on first genome of input, after many DCJ-C moves
+
+Column 4: gene identifier
+       - on input, anything unique
+       - in output, same as column 1, except prefixed with "g2." (same gene, just moved around)
+Column 5: chromosome identifier
+       - on input, anything unique
+       - in output, new chromosome ids beginning with "g2.", completely decoupled from originals
+Column 6: ordinal key for gene within chromosome (not really a coordinate) 
+       - on input, specifies order of genes on second-genome chromosome, should be unique
+       - in output, specifies order on simulated chromosomes, renumbered in sequence through whole genome
+
+On output, columns 3 and 6 are currently genome-wide ordinal numbers, so a simple Oxford
+plot of g1 (original) gene locations vs. g2 (modified) gene locations can
+be made by using columns 3 and 6 as the x and y coordinates.
+(You would then still need to draw lines to grid the plot by chromosomes.)
